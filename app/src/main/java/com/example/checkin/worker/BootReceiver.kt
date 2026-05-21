@@ -14,12 +14,16 @@ class BootReceiver : BroadcastReceiver() {
         if (intent.action == Intent.ACTION_BOOT_COMPLETED) {
             val pendingResult = goAsync()
             CoroutineScope(Dispatchers.IO).launch {
-                val entryPoint = EntryPointAccessors.fromApplication(
-                    context.applicationContext,
-                    ReminderEntryPoint::class.java
-                )
-                ReminderScheduler.scheduleAll(context, entryPoint.repository())
-                pendingResult.finish()
+                try {
+                    val entryPoint = EntryPointAccessors.fromApplication(
+                        context.applicationContext,
+                        ReminderEntryPoint::class.java
+                    )
+                    ReminderScheduler.scheduleAll(context, entryPoint.repository())
+                } catch (_: Exception) {
+                } finally {
+                    pendingResult.finish()
+                }
             }
         }
     }

@@ -19,7 +19,6 @@ import dagger.hilt.components.SingletonComponent
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 
 class ReminderReceiver : BroadcastReceiver() {
 
@@ -31,40 +30,46 @@ class ReminderReceiver : BroadcastReceiver() {
         val pendingResult = goAsync()
 
         CoroutineScope(Dispatchers.IO).launch {
-            val entryPoint = EntryPointAccessors.fromApplication(
-                context.applicationContext,
-                ReminderEntryPoint::class.java
-            )
-            val repository = entryPoint.repository()
-            val appContext = context.applicationContext
+            try {
+                val entryPoint = EntryPointAccessors.fromApplication(
+                    context.applicationContext,
+                    ReminderEntryPoint::class.java
+                )
+                val repository = entryPoint.repository()
+                val appContext = context.applicationContext
 
-            val today = repository.today()
-            val records = repository.getRecordsByDate(today)
-            val hasCheckedIn = records.any { it.projectId == projectId }
+                val today = repository.today()
+                val records = repository.getRecordsByDate(today)
+                val hasCheckedIn = records.any { it.projectId == projectId }
 
-            if (!hasCheckedIn && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
-                && ActivityCompat.checkSelfPermission(
-                    appContext, android.Manifest.permission.POST_NOTIFICATIONS
-                ) == PackageManager.PERMISSION_GRANTED
-            ) {
-                withContext(Dispatchers.Main) {
+                if (!hasCheckedIn && canSendNotification(appContext)) {
                     sendNotification(appContext, projectName, projectId)
                 }
-            }
 
-            val project = repository.getProject(projectId)
-            if (project != null) {
-                ReminderScheduler.schedule(appContext, project)
+                val project = repository.getProject(projectId)
+                if (project != null) {
+                    ReminderScheduler.schedule(appContext, project)
+                }
+            } catch (_: Exception) {
+            } finally {
+                pendingResult.finish()
             }
-
-            pendingResult.finish()
         }
+    }
+
+    private fun canSendNotification(context: Context): Boolean {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            return ActivityCompat.checkSelfPermission(
+                context,
+                android.Manifest.permission.POST_NOTIFICATIONS
+            ) == PackageManager.PERMISSION_GRANTED
+        }
+        return true
     }
 
     private fun sendNotification(context: Context, projectName: String, projectId: Long) {
         val intent = Intent(context, MainActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-            putExtra("project_id", projectId)
         }
         val pi = PendingIntent.getActivity(
             context, projectId.toInt(), intent,

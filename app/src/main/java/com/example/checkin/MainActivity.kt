@@ -83,22 +83,28 @@ class MainActivity : ComponentActivity() {
 
     private fun scheduleReminders() {
         lifecycleScope.launch {
-            val entryPoint = EntryPointAccessors.fromApplication(
-                applicationContext,
-                com.example.checkin.worker.ReminderEntryPoint::class.java
-            )
-            ReminderScheduler.scheduleAll(this@MainActivity, entryPoint.repository())
+            try {
+                val entryPoint = EntryPointAccessors.fromApplication(
+                    applicationContext,
+                    com.example.checkin.worker.ReminderEntryPoint::class.java
+                )
+                ReminderScheduler.scheduleAll(this@MainActivity, entryPoint.repository())
+            } catch (_: Exception) {
+            }
         }
     }
 
     private fun scheduleDailySync() {
-        val request = PeriodicWorkRequestBuilder<ReminderWorker>(1, TimeUnit.DAYS)
-            .build()
-        WorkManager.getInstance(this).enqueueUniquePeriodicWork(
-            "daily_alarm_sync",
-            ExistingPeriodicWorkPolicy.KEEP,
-            request
-        )
+        try {
+            val request = PeriodicWorkRequestBuilder<ReminderWorker>(1, TimeUnit.DAYS)
+                .build()
+            WorkManager.getInstance(this).enqueueUniquePeriodicWork(
+                "daily_alarm_sync",
+                ExistingPeriodicWorkPolicy.KEEP,
+                request
+            )
+        } catch (_: Exception) {
+        }
     }
 
     private fun requestNotificationPermission() {
