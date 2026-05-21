@@ -4,6 +4,7 @@ import android.Manifest
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -84,12 +85,14 @@ class MainActivity : ComponentActivity() {
     private fun scheduleReminders() {
         lifecycleScope.launch {
             try {
+                Log.i("CheckIn", "[Main] scheduling reminders...")
                 val entryPoint = EntryPointAccessors.fromApplication(
                     applicationContext,
                     com.example.checkin.worker.ReminderEntryPoint::class.java
                 )
                 ReminderScheduler.scheduleAll(this@MainActivity, entryPoint.repository())
-            } catch (_: Exception) {
+            } catch (e: Exception) {
+                Log.e("CheckIn", "[Main] scheduleReminders failed", e)
             }
         }
     }

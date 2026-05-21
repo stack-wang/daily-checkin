@@ -6,6 +6,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
+import android.util.Log
 import androidx.core.app.ActivityCompat
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
@@ -22,10 +23,19 @@ import kotlinx.coroutines.launch
 
 class ReminderReceiver : BroadcastReceiver() {
 
+    companion object {
+        private const val TAG = "CheckIn"
+    }
+
     override fun onReceive(context: Context, intent: Intent) {
         val projectId = intent.getLongExtra("project_id", -1L)
         val projectName = intent.getStringExtra("project_name") ?: ""
-        if (projectId == -1L) return
+        Log.i(TAG, "[Receiver] ⏰ FIRED! project='$projectName' id=$projectId")
+
+        if (projectId == -1L) {
+            Log.e(TAG, "[Receiver] invalid projectId, abort")
+            return
+        }
 
         val pendingResult = goAsync()
 
@@ -39,18 +49,33 @@ class ReminderReceiver : BroadcastReceiver() {
                 val appContext = context.applicationContext
 
                 val today = repository.today()
+                Log.d(TAG, "[Receiver] today=$today, checking records...")
                 val records = repository.getRecordsByDate(today)
                 val hasCheckedIn = records.any { it.projectId == projectId }
+                Log.i(TAG, "[Receiver] project='$projectName' id=$projectId: checkedIn=$hasCheckedIn (${records.size} records today)")
 
-                if (!hasCheckedIn && canSendNotification(appContext)) {
-                    sendNotification(appContext, projectName, projectId)
+                if (!hasCheckedIn) {
+                    val canNotify = canSendNotification(appContext)
+                    Log.i(TAG, "[Receiver] canSendNotification=$canNotify (sdk=${Build.VERSION.SDK_INT})")
+                    if (canNotify) {
+                        sendNotification(appContext, projectName, projectId)
+                        Log.i(TAG, "[Receiver] ✅ notification sent for '$projectName'")
+                    } else {
+                        Log.w(TAG, "[Receiver] ❌ cannot send notification - permission not granted")
+                    }
+                } else {
+                    Log.d(TAG, "[Receiver] already checked in, skip notification")
                 }
 
                 val project = repository.getProject(projectId)
                 if (project != null) {
                     ReminderScheduler.schedule(appContext, project)
+                    Log.d(TAG, "[Receiver] re-scheduled next alarm for '$projectName'")
+                } else {
+                    Log.w(TAG, "[Receiver] project id=$projectId no longer exists, cancel alarm")
                 }
-            } catch (_: Exception) {
+            } catch (e: Exception) {
+                Log.e(TAG, "[Receiver] exception", e)
             } finally {
                 pendingResult.finish()
             }
@@ -59,10 +84,12 @@ class ReminderReceiver : BroadcastReceiver() {
 
     private fun canSendNotification(context: Context): Boolean {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            return ActivityCompat.checkSelfPermission(
+            val granted = ActivityCompat.checkSelfPermission(
                 context,
                 android.Manifest.permission.POST_NOTIFICATIONS
             ) == PackageManager.PERMISSION_GRANTED
+            Log.d(TAG, "[Receiver] POST_NOTIFICATIONS permission: ${if (granted) "GRANTED" else "DENIED"}")
+            return granted
         }
         return true
     }

@@ -1,6 +1,7 @@
 package com.example.checkin.ui.project
 
 import android.content.Context
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.checkin.data.db.entity.CheckInProject
@@ -25,6 +26,7 @@ class ProjectViewModel @Inject constructor(
 
     fun delete(project: CheckInProject) {
         viewModelScope.launch {
+            Log.d("CheckIn", "[Delete] cancelling alarm for project '${project.name}'(id=${project.id})")
             ReminderScheduler.cancel(context, project.id)
             repository.deleteProject(project)
         }

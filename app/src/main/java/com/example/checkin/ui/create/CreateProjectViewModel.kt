@@ -1,6 +1,7 @@
 package com.example.checkin.ui.create
 
 import android.content.Context
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.checkin.data.db.entity.CheckInProject
@@ -22,6 +23,7 @@ class CreateProjectViewModel @Inject constructor(
             val id = repository.createProject(project)
             val created = repository.getProject(id)
             if (created != null) {
+                Log.i("CheckIn", "[Create] new project '${created.name}'(id=$id) time=${created.reminderTime}, scheduling alarm")
                 ReminderScheduler.schedule(context, created)
             }
         }

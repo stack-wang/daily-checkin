@@ -5,14 +5,22 @@ import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import android.os.Build
+import android.util.Log
 import com.example.checkin.data.db.entity.CheckInProject
 import com.example.checkin.data.repository.CheckInRepository
+import java.text.SimpleDateFormat
 import java.util.Calendar
+import java.util.Locale
 
 object ReminderScheduler {
 
+    private const val TAG = "CheckIn"
+
     fun schedule(context: Context, project: CheckInProject) {
-        if (project.reminderTime.isEmpty()) return
+        if (project.reminderTime.isEmpty()) {
+            Log.d(TAG, "[Alarm] skip '${project.name}'(id=${project.id}): no reminderTime")
+            return
+        }
 
         val parts = project.reminderTime.split(":")
         val hour = parts[0].toInt()
@@ -27,6 +35,9 @@ object ReminderScheduler {
                 add(Calendar.DAY_OF_YEAR, 1)
             }
         }
+
+        val sdf = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault())
+        val fireTime = sdf.format(calendar.time)
 
         val intent = Intent(context, ReminderReceiver::class.java).apply {
             putExtra("project_id", project.id)
@@ -45,11 +56,14 @@ object ReminderScheduler {
                     calendar.timeInMillis,
                     pendingIntent
                 )
+                Log.i(TAG, "[Alarm] ✓ setExactAndAllowWhileIdle '${project.name}'(id=${project.id}) at $fireTime")
             } else {
                 alarmManager.setExact(AlarmManager.RTC_WAKEUP, calendar.timeInMillis, pendingIntent)
+                Log.i(TAG, "[Alarm] ✓ setExact '${project.name}'(id=${project.id}) at $fireTime")
             }
         } catch (e: SecurityException) {
             alarmManager.set(AlarmManager.RTC_WAKEUP, calendar.timeInMillis, pendingIntent)
+            Log.w(TAG, "[Alarm] ⚠ SecurityException, fallback to set() for '${project.name}'(id=${project.id})")
         }
     }
 
@@ -61,15 +75,19 @@ object ReminderScheduler {
         )
         val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
         alarmManager.cancel(pendingIntent)
+        Log.d(TAG, "[Alarm] cancelled alarm for project id=$projectId")
     }
 
     suspend fun scheduleAll(context: Context, repository: CheckInRepository) {
         try {
             val projects = repository.getProjectsWithReminder()
+            Log.i(TAG, "[Alarm] scheduleAll: found ${projects.size} project(s) with reminders")
             for (project in projects) {
+                Log.d(TAG, "[Alarm] scheduleAll: processing '${project.name}'(id=${project.id}) time=${project.reminderTime} enabled=${project.reminderEnabled}")
                 schedule(context, project)
             }
-        } catch (_: Exception) {
+        } catch (e: Exception) {
+            Log.e(TAG, "[Alarm] scheduleAll failed", e)
         }
     }
 }
