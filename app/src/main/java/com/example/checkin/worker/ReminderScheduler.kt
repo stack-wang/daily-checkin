@@ -62,8 +62,9 @@ object ReminderScheduler {
                 Log.i(TAG, "[Alarm] ✓ setExact '${project.name}'(id=${project.id}) at $fireTime")
             }
         } catch (e: SecurityException) {
-            alarmManager.set(AlarmManager.RTC_WAKEUP, calendar.timeInMillis, pendingIntent)
-            Log.w(TAG, "[Alarm] ⚠ SecurityException, fallback to set() for '${project.name}'(id=${project.id})")
+            val alarmClockInfo = AlarmManager.AlarmClockInfo(calendar.timeInMillis, pendingIntent)
+            alarmManager.setAlarmClock(alarmClockInfo, pendingIntent)
+            Log.w(TAG, "[Alarm] ⚠ SecurityException, fallback to setAlarmClock() for '${project.name}'(id=${project.id}) at $fireTime")
         }
     }
 
