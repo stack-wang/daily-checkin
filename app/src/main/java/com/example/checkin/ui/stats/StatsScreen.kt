@@ -183,7 +183,7 @@ fun StatItem(label: String, value: String, modifier: Modifier = Modifier) {
         Text(
             label,
             style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.outline
+            color = MaterialTheme.colorScheme.onSurfaceVariant
         )
     }
 }

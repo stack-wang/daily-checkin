@@ -18,7 +18,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AccessTime
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -27,12 +26,10 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
-import androidx.compose.material3.TimePicker
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
-import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -42,13 +39,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.checkin.data.db.entity.CheckInProject
 import com.example.checkin.ui.theme.PresetColors
 import com.example.checkin.ui.theme.PresetIcons
 import kotlinx.coroutines.launch
-import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
@@ -62,10 +59,8 @@ fun CreateProjectSheet(
     var name by remember { mutableStateOf("") }
     var selectedIcon by remember { mutableStateOf(PresetIcons[0]) }
     var selectedColor by remember { mutableStateOf(PresetColors[0]) }
-    var reminderHour by remember { mutableIntStateOf(8) }
-    var reminderMinute by remember { mutableIntStateOf(0) }
-    var showTimePicker by remember { mutableStateOf(false) }
-    var reminderTime by remember { mutableStateOf("08:00") }
+    var reminderHourStr by remember { mutableStateOf("08") }
+    var reminderMinuteStr by remember { mutableStateOf("00") }
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
@@ -161,32 +156,15 @@ fun CreateProjectSheet(
 
             Spacer(modifier = Modifier.height(16.dp))
 
+            Text("提醒时间", style = MaterialTheme.typography.labelLarge, modifier = Modifier.padding(bottom = 8.dp))
             Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(8.dp))
-                    .clickable { showTimePicker = !showTimePicker }
-                    .background(MaterialTheme.colorScheme.surfaceVariant)
-                    .padding(12.dp)
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Icon(Icons.Filled.AccessTime, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
-                Spacer(modifier = Modifier.width(8.dp))
-                Text("提醒时间: $reminderTime", style = MaterialTheme.typography.bodyLarge)
-                Spacer(modifier = Modifier.weight(1f))
-                Text(if (showTimePicker) "收起" else "选择", color = MaterialTheme.colorScheme.primary)
-            }
-
-            if (showTimePicker) {
-                val timePickerState = rememberTimePickerState(
-                    initialHour = reminderHour,
-                    initialMinute = reminderMinute,
-                    is24Hour = true
-                )
-                TimePicker(state = timePickerState)
-                reminderHour = timePickerState.hour
-                reminderMinute = timePickerState.minute
-                reminderTime = String.format(Locale.getDefault(), "%02d:%02d", reminderHour, reminderMinute)
+                TimeAdjuster(current = reminderHourStr, onAdjust = { h -> reminderHourStr = h }, range = 0..23)
+                Text(" : ", style = MaterialTheme.typography.headlineMedium)
+                TimeAdjuster(current = reminderMinuteStr, onAdjust = { m -> reminderMinuteStr = m }, range = 0..59)
             }
 
             Spacer(modifier = Modifier.height(24.dp))
@@ -194,13 +172,14 @@ fun CreateProjectSheet(
             Button(
                 onClick = {
                     if (name.isNotBlank()) {
+                        val time = "${reminderHourStr.padStart(2, '0')}:${reminderMinuteStr.padStart(2, '0')}"
                         viewModel.create(
                             CheckInProject(
                                 name = name,
                                 icon = selectedIcon,
                                 color = selectedColor,
-                                reminderTime = reminderTime,
-                                reminderEnabled = reminderTime.isNotEmpty()
+                                reminderTime = time,
+                                reminderEnabled = time.isNotEmpty()
                             )
                         )
                         scope.launch {
@@ -214,6 +193,50 @@ fun CreateProjectSheet(
             ) {
                 Text("创建")
             }
+        }
+    }
+}
+
+@Composable
+private fun TimeAdjuster(
+    current: String,
+    onAdjust: (String) -> Unit,
+    range: IntRange
+) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        TextButton(
+            onClick = {
+                val v = (current.toIntOrNull() ?: 0) + 1
+                val adjusted = if (v > range.last) range.first else v
+                onAdjust(adjusted.toString().padStart(2, '0'))
+            }
+        ) {
+            Text("+", style = MaterialTheme.typography.titleMedium)
+        }
+        OutlinedTextField(
+            value = current,
+            onValueChange = { input ->
+                val filtered = input.filter { it.isDigit() }.take(2)
+                if (filtered.isEmpty()) {
+                    onAdjust("00")
+                } else {
+                    val v = filtered.toIntOrNull() ?: 0
+                    val clamped = v.coerceIn(range.first, range.last)
+                    onAdjust(clamped.toString().padStart(2, '0'))
+                }
+            },
+            modifier = Modifier.width(64.dp),
+            textStyle = MaterialTheme.typography.headlineSmall.copy(textAlign = TextAlign.Center),
+            singleLine = true
+        )
+        TextButton(
+            onClick = {
+                val v = (current.toIntOrNull() ?: 0) - 1
+                val adjusted = if (v < range.first) range.last else v
+                onAdjust(adjusted.toString().padStart(2, '0'))
+            }
+        ) {
+            Text("−", style = MaterialTheme.typography.titleMedium)
         }
     }
 }
