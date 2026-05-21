@@ -8,6 +8,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
@@ -30,32 +31,37 @@ class StatsViewModel @Inject constructor(
     val uiState: StateFlow<StatsUiState> = _uiState.asStateFlow()
 
     init {
-        loadStats()
+        viewModelScope.launch {
+            combine(
+                repository.observeProjects(),
+                repository.observeStats()
+            ) { projects, _ ->
+                loadStats()
+            }.collect()
+        }
     }
 
-    fun loadStats() {
-        viewModelScope.launch {
-            val stats = repository.getAllStats()
-            val projects = repository.getAllProjects()
-            val projectNames = projects.associate { it.id to it.name }
-            val projectColors = projects.associate { it.id to it.color }
+    private suspend fun loadStats() {
+        val stats = repository.getAllStats()
+        val projects = repository.getAllProjects()
+        val projectNames = projects.associate { it.id to it.name }
+        val projectColors = projects.associate { it.id to it.color }
 
-            val today = LocalDate.now()
-            val startDate = today.minusMonths(3).withDayOfMonth(1)
-            val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
-            val dailyData = repository.getDailyCountInRange(
-                startDate.format(formatter),
-                today.format(formatter)
-            )
-            val dailyCounts = dailyData.associate { it.date to it.count }
+        val today = LocalDate.now()
+        val startDate = today.minusMonths(3).withDayOfMonth(1)
+        val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
+        val dailyData = repository.getDailyCountInRange(
+            startDate.format(formatter),
+            today.format(formatter)
+        )
+        val dailyCounts = dailyData.associate { it.date to it.count }
 
-            _uiState.value = StatsUiState(
-                stats = stats,
-                projectNames = projectNames,
-                projectColors = projectColors,
-                dailyCounts = dailyCounts,
-                isLoading = false
-            )
-        }
+        _uiState.value = StatsUiState(
+            stats = stats,
+            projectNames = projectNames,
+            projectColors = projectColors,
+            dailyCounts = dailyCounts,
+            isLoading = false
+        )
     }
 }

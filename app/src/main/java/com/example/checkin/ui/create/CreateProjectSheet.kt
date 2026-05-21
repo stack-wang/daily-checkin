@@ -114,7 +114,12 @@ fun CreateProjectSheet(
                             .clickable { selectedIcon = icon },
                         contentAlignment = Alignment.Center
                     ) {
-                        Text(icon.first().toString(), color = Color.White, fontWeight = FontWeight.Bold)
+                        Text(
+                            icon.first().toString(),
+                            color = if (selectedIcon == icon) Color.White
+                                    else MaterialTheme.colorScheme.onSurfaceVariant,
+                            fontWeight = FontWeight.Bold
+                        )
                     }
                 }
             }

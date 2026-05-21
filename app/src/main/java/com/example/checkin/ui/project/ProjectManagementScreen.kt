@@ -163,7 +163,7 @@ fun ProjectItem(
                     Text(
                         "提醒 ${project.reminderTime}",
                         style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.outline
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
             }
