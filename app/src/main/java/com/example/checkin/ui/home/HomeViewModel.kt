@@ -79,4 +79,12 @@ class HomeViewModel @Inject constructor(
             loadTodayData(projects)
         }
     }
+
+    fun uncheckIn(projectId: Long) {
+        viewModelScope.launch {
+            repository.uncheckIn(projectId, repository.today())
+            val projects = repository.getAllProjects()
+            loadTodayData(projects)
+        }
+    }
 }

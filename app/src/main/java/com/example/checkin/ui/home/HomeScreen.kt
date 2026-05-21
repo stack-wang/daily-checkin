@@ -115,7 +115,8 @@ fun HomeScreen(
                     CheckInItemCard(
                         project = project,
                         isChecked = isChecked,
-                        onCheck = { viewModel.checkIn(project.id) }
+                        onCheck = { viewModel.checkIn(project.id) },
+                        onUncheck = { viewModel.uncheckIn(project.id) }
                     )
                 }
 
@@ -155,7 +156,8 @@ fun HomeScreen(
 fun CheckInItemCard(
     project: CheckInProject,
     isChecked: Boolean,
-    onCheck: () -> Unit
+    onCheck: () -> Unit,
+    onUncheck: () -> Unit
 ) {
     val bgColor by animateColorAsState(
         if (isChecked) Color(android.graphics.Color.parseColor(project.color)).copy(alpha = 0.1f)
@@ -171,7 +173,7 @@ fun CheckInItemCard(
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable(enabled = !isChecked) { onCheck() },
+            .clickable { if (isChecked) onUncheck() else onCheck() },
         shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(containerColor = cardColor)
     ) {
