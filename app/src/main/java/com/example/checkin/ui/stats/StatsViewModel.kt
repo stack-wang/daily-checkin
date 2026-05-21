@@ -8,7 +8,6 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
@@ -32,12 +31,10 @@ class StatsViewModel @Inject constructor(
 
     init {
         viewModelScope.launch {
-            combine(
-                repository.observeProjects(),
-                repository.observeStats()
-            ) { projects, _ ->
-                loadStats()
-            }.collect()
+            repository.observeProjects().collect { loadStats() }
+        }
+        viewModelScope.launch {
+            repository.observeStats().collect { loadStats() }
         }
     }
 
