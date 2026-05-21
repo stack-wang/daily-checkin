@@ -7,7 +7,10 @@ import com.example.checkin.data.db.entity.CheckInProject
 import com.example.checkin.data.db.entity.CheckInRecord
 import com.example.checkin.data.db.entity.CheckInStats
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import java.time.Instant
 import java.time.LocalDate
+import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.time.temporal.ChronoUnit
 import javax.inject.Inject
@@ -20,6 +23,8 @@ class CheckInRepository @Inject constructor(
     private val statsDao: StatsDao
 ) {
     private val dateFormatter: DateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
+
+    val makeUpDaysFlow = MutableStateFlow(7)
 
     fun observeProjects(): Flow<List<CheckInProject>> = projectDao.observeAll()
 
@@ -93,16 +98,20 @@ class CheckInRepository @Inject constructor(
     suspend fun getDailyCountInRange(startDate: String, endDate: String): List<RecordDao.DailyCount> =
         recordDao.getDailyCountInRange(startDate, endDate)
 
-    suspend fun getMissedCheckIns(projectId: Long, makeUpDays: Int): List<String> {
+    suspend fun getMissedCheckIns(project: CheckInProject): List<String> {
         val today = LocalDate.parse(today(), dateFormatter)
-        val startDate = today.minusDays(makeUpDays.toLong()).format(dateFormatter)
-        val records = recordDao.getByProjectAndDateRange(projectId, startDate, today.format(dateFormatter))
+        val ndaysAgo = today.minusDays(makeUpDaysFlow.value.toLong())
+        val projectCreateDate = Instant.ofEpochMilli(project.createdAt)
+            .atZone(ZoneId.systemDefault())
+            .toLocalDate()
+        val effectiveStart = if (projectCreateDate.isAfter(ndaysAgo)) projectCreateDate else ndaysAgo
+        val startDate = effectiveStart.format(dateFormatter)
+        val records = recordDao.getByProjectAndDateRange(project.id, startDate, today.format(dateFormatter))
         val recordedDates = records.map { it.date }.toSet()
 
         val missedDates = mutableListOf<String>()
-        var d = LocalDate.parse(startDate, dateFormatter)
-        val endD = today
-        while (d < endD) {
+        var d = effectiveStart
+        while (d < today) {
             val dateStr = d.format(dateFormatter)
             if (dateStr !in recordedDates) {
                 missedDates.add(dateStr)

@@ -28,11 +28,15 @@ class HomeViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(HomeUiState())
     val uiState: StateFlow<HomeUiState> = _uiState.asStateFlow()
 
-    private var makeUpDays = 7
-
     init {
         viewModelScope.launch {
             repository.observeProjects().collect { projects ->
+                loadTodayData(projects)
+            }
+        }
+        viewModelScope.launch {
+            repository.makeUpDaysFlow.collect {
+                val projects = repository.getAllProjects()
                 loadTodayData(projects)
             }
         }
@@ -41,10 +45,11 @@ class HomeViewModel @Inject constructor(
     private suspend fun loadTodayData(projects: List<CheckInProject>) {
         val today = repository.today()
         val records = repository.getRecordsByDate(today)
+        val makeUpDays = repository.makeUpDaysFlow.value
 
         val missedItems = mutableMapOf<Long, List<String>>()
         for (project in projects) {
-            val missed = repository.getMissedCheckIns(project.id, makeUpDays)
+            val missed = repository.getMissedCheckIns(project)
             if (missed.isNotEmpty()) {
                 missedItems[project.id] = missed
             }

@@ -1,19 +1,19 @@
 package com.example.checkin.ui.settings
 
 import androidx.lifecycle.ViewModel
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
+import com.example.checkin.data.repository.CheckInRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.StateFlow
 import javax.inject.Inject
 
 @HiltViewModel
-class SettingsViewModel @Inject constructor() : ViewModel() {
+class SettingsViewModel @Inject constructor(
+    private val repository: CheckInRepository
+) : ViewModel() {
 
-    private val _makeUpDays = MutableStateFlow(7)
-    val makeUpDays: StateFlow<Int> = _makeUpDays.asStateFlow()
+    val makeUpDays: StateFlow<Int> = repository.makeUpDaysFlow
 
     fun setMakeUpDays(days: Int) {
-        _makeUpDays.value = days.coerceIn(1, 30)
+        repository.makeUpDaysFlow.value = days.coerceIn(1, 30)
     }
 }
