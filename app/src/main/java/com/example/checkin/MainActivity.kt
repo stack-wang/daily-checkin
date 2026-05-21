@@ -14,12 +14,20 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.lifecycleScope
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import androidx.work.ExistingPeriodicWorkPolicy
+import androidx.work.PeriodicWorkRequestBuilder
+import androidx.work.WorkManager
 import com.example.checkin.ui.components.BottomNavBar
 import com.example.checkin.ui.theme.CheckInTheme
 import com.example.checkin.worker.ReminderScheduler
+import com.example.checkin.worker.ReminderWorker
 import dagger.hilt.android.AndroidEntryPoint
+import dagger.hilt.android.EntryPointAccessors
+import kotlinx.coroutines.launch
+import java.util.concurrent.TimeUnit
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
@@ -28,7 +36,7 @@ class MainActivity : ComponentActivity() {
         ActivityResultContracts.RequestPermission()
     ) { granted ->
         if (granted) {
-            ReminderScheduler.schedule(this)
+            scheduleReminders()
         }
     }
 
@@ -37,7 +45,8 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
 
         requestNotificationPermission()
-        ReminderScheduler.schedule(this)
+        scheduleReminders()
+        scheduleDailySync()
 
         setContent {
             CheckInTheme {
@@ -57,7 +66,7 @@ class MainActivity : ComponentActivity() {
                                     restoreState = true
                                 }
                             },
-                            onCreateClick = { /* handled by the FAB in navBar itself */ }
+                            onCreateClick = { }
                         )
                     }
                 ) { innerPadding ->
@@ -70,6 +79,26 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
+    }
+
+    private fun scheduleReminders() {
+        lifecycleScope.launch {
+            val entryPoint = EntryPointAccessors.fromApplication(
+                applicationContext,
+                com.example.checkin.worker.ReminderEntryPoint::class.java
+            )
+            ReminderScheduler.scheduleAll(this@MainActivity, entryPoint.repository())
+        }
+    }
+
+    private fun scheduleDailySync() {
+        val request = PeriodicWorkRequestBuilder<ReminderWorker>(1, TimeUnit.DAYS)
+            .build()
+        WorkManager.getInstance(this).enqueueUniquePeriodicWork(
+            "daily_alarm_sync",
+            ExistingPeriodicWorkPolicy.KEEP,
+            request
+        )
     }
 
     private fun requestNotificationPermission() {
