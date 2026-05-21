@@ -1,6 +1,7 @@
 package com.example.checkin
 
 import android.Manifest
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
@@ -23,6 +24,7 @@ import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import com.example.checkin.ui.components.BottomNavBar
 import com.example.checkin.ui.theme.CheckInTheme
+import com.example.checkin.worker.AlarmKeepAliveService
 import com.example.checkin.worker.ReminderScheduler
 import com.example.checkin.worker.ReminderWorker
 import dagger.hilt.android.AndroidEntryPoint
@@ -48,6 +50,7 @@ class MainActivity : ComponentActivity() {
         requestNotificationPermission()
         scheduleReminders()
         scheduleDailySync()
+        startKeepAliveService()
 
         setContent {
             CheckInTheme {
@@ -107,6 +110,15 @@ class MainActivity : ComponentActivity() {
                 request
             )
         } catch (_: Exception) {
+        }
+    }
+
+    private fun startKeepAliveService() {
+        val intent = Intent(this, AlarmKeepAliveService::class.java)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            startForegroundService(intent)
+        } else {
+            startService(intent)
         }
     }
 
