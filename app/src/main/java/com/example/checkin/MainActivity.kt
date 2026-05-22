@@ -16,8 +16,15 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.compose.currentBackStackEntryAsState
@@ -69,10 +76,27 @@ class MainActivity : ComponentActivity() {
                 val navBackStackEntry by navController.currentBackStackEntryAsState()
                 val currentRoute = navBackStackEntry?.destination?.route
 
-                val needsExactAlarm = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
-                    && !canScheduleExactAlarms()
+                var showExactAlarmDialog by remember { mutableStateOf(false) }
 
-                if (needsExactAlarm) {
+                DisposableEffect(Unit) {
+                    showExactAlarmDialog = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
+                        && !canScheduleExactAlarms()
+                    onDispose { }
+                }
+
+                val lifecycleOwner = LocalLifecycleOwner.current
+                DisposableEffect(lifecycleOwner) {
+                    val observer = LifecycleEventObserver { _, event ->
+                        if (event == Lifecycle.Event.ON_RESUME) {
+                            showExactAlarmDialog = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
+                                && !canScheduleExactAlarms()
+                        }
+                    }
+                    lifecycleOwner.lifecycle.addObserver(observer)
+                    onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+                }
+
+                if (showExactAlarmDialog) {
                     ExactAlarmDialog(
                         onGoToSettings = {
                             val intent = Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM).apply {
@@ -80,7 +104,7 @@ class MainActivity : ComponentActivity() {
                             }
                             exactAlarmLauncher.launch(intent)
                         },
-                        onDismiss = { }
+                        onDismiss = { showExactAlarmDialog = false }
                     )
                 }
 
