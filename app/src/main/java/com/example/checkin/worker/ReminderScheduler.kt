@@ -49,14 +49,23 @@ object ReminderScheduler {
         )
 
         val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
+        val canExact = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            alarmManager.canScheduleExactAlarms()
+        } else {
+            true
+        }
+
         try {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            if (canExact) {
                 alarmManager.setExactAndAllowWhileIdle(
                     AlarmManager.RTC_WAKEUP,
                     calendar.timeInMillis,
                     pendingIntent
                 )
                 Log.i(TAG, "[Alarm] ✓ setExactAndAllowWhileIdle '${project.name}'(id=${project.id}) at $fireTime")
+            } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                alarmManager.setExact(AlarmManager.RTC_WAKEUP, calendar.timeInMillis, pendingIntent)
+                Log.i(TAG, "[Alarm] ✓ setExact '${project.name}'(id=${project.id}) at $fireTime")
             } else {
                 alarmManager.setExact(AlarmManager.RTC_WAKEUP, calendar.timeInMillis, pendingIntent)
                 Log.i(TAG, "[Alarm] ✓ setExact '${project.name}'(id=${project.id}) at $fireTime")

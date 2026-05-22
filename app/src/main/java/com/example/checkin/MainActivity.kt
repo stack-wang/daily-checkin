@@ -1,10 +1,13 @@
 package com.example.checkin
 
 import android.Manifest
+import android.app.AlarmManager
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.provider.Settings
 import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -23,6 +26,7 @@ import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import com.example.checkin.ui.components.BottomNavBar
+import com.example.checkin.ui.components.ExactAlarmDialog
 import com.example.checkin.ui.theme.CheckInTheme
 import com.example.checkin.worker.AlarmKeepAliveService
 import com.example.checkin.worker.ReminderScheduler
@@ -43,11 +47,18 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    private val exactAlarmLauncher = registerForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) {
+        scheduleReminders()
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
 
         requestNotificationPermission()
+        requestExactAlarmPermission()
         scheduleReminders()
         scheduleDailySync()
         startKeepAliveService()
@@ -57,6 +68,21 @@ class MainActivity : ComponentActivity() {
                 val navController = rememberNavController()
                 val navBackStackEntry by navController.currentBackStackEntryAsState()
                 val currentRoute = navBackStackEntry?.destination?.route
+
+                val needsExactAlarm = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
+                    && !canScheduleExactAlarms()
+
+                if (needsExactAlarm) {
+                    ExactAlarmDialog(
+                        onGoToSettings = {
+                            val intent = Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM).apply {
+                                data = Uri.parse("package:$packageName")
+                            }
+                            exactAlarmLauncher.launch(intent)
+                        },
+                        onDismiss = { }
+                    )
+                }
 
                 Scaffold(
                     modifier = Modifier.fillMaxSize(),
@@ -82,6 +108,18 @@ class MainActivity : ComponentActivity() {
                     )
                 }
             }
+        }
+    }
+
+    private fun canScheduleExactAlarms(): Boolean {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) return true
+        val alarmManager = getSystemService(AlarmManager::class.java)
+        return alarmManager.canScheduleExactAlarms()
+    }
+
+    private fun requestExactAlarmPermission() {
+        if (!canScheduleExactAlarms()) {
+            Log.w("CheckIn", "[Main] exact alarm permission not granted")
         }
     }
 
