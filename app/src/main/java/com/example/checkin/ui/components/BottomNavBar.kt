@@ -3,14 +3,16 @@ package com.example.checkin.ui.components
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.BarChart
+import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.BarChart
+import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.FloatingActionButtonDefaults
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
@@ -24,7 +26,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.example.checkin.Routes
 import com.example.checkin.ui.create.CreateProjectSheet
 
@@ -50,14 +54,12 @@ fun BottomNavBar(
     var showCreateSheet by remember { mutableStateOf(false) }
 
     if (showCreateSheet) {
-        CreateProjectSheet(
-            onDismiss = { showCreateSheet = false }
-        )
+        CreateProjectSheet(onDismiss = { showCreateSheet = false })
     }
 
     NavigationBar(
         containerColor = MaterialTheme.colorScheme.surface,
-        tonalElevation = 2.dp
+        tonalElevation = 0.dp
     ) {
         bottomNavItems.forEach { item ->
             NavigationBarItem(
@@ -66,14 +68,20 @@ fun BottomNavBar(
                 icon = {
                     Icon(
                         imageVector = if (currentRoute == item.route) item.selectedIcon else item.unselectedIcon,
-                        contentDescription = item.label
+                        contentDescription = item.label,
+                        modifier = Modifier.size(24.dp)
                     )
                 },
-                label = { Text(item.label) },
+                label = {
+                    if (currentRoute == item.route) {
+                        Text(item.label, fontSize = 11.sp, fontWeight = FontWeight.Medium)
+                    }
+                },
                 colors = NavigationBarItemDefaults.colors(
                     selectedIconColor = MaterialTheme.colorScheme.primary,
                     selectedTextColor = MaterialTheme.colorScheme.primary,
-                    indicatorColor = MaterialTheme.colorScheme.primaryContainer
+                    indicatorColor = MaterialTheme.colorScheme.primaryContainer,
+                    unselectedIconColor = MaterialTheme.colorScheme.outline
                 )
             )
         }
@@ -83,17 +91,17 @@ fun BottomNavBar(
             icon = {
                 FloatingActionButton(
                     onClick = { showCreateSheet = true },
+                    modifier = Modifier.size(44.dp),
                     containerColor = MaterialTheme.colorScheme.primary,
-                    contentColor = MaterialTheme.colorScheme.onPrimary,
-                    modifier = Modifier.size(40.dp)
+                    contentColor = Color.White,
+                    shape = androidx.compose.foundation.shape.RoundedCornerShape(14.dp),
+                    elevation = FloatingActionButtonDefaults.elevation(4.dp)
                 ) {
-                    Icon(Icons.Filled.Add, contentDescription = "新建")
+                    Icon(Icons.Filled.Add, contentDescription = "新建", modifier = Modifier.size(24.dp))
                 }
             },
-            label = { Text("") },
-            colors = NavigationBarItemDefaults.colors(
-                indicatorColor = Color.Transparent
-            )
+            label = { },
+            colors = NavigationBarItemDefaults.colors(indicatorColor = Color.Transparent)
         )
     }
 }

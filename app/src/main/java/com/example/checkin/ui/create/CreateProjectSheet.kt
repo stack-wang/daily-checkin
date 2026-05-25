@@ -1,5 +1,6 @@
 package com.example.checkin.ui.create
 
+import android.graphics.Color as AndroidColor
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -20,11 +21,13 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
@@ -41,6 +44,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.checkin.data.db.entity.CheckInProject
 import com.example.checkin.ui.theme.PresetColors
@@ -65,59 +69,63 @@ fun CreateProjectSheet(
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
-        shape = RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp)
+        shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
+        containerColor = MaterialTheme.colorScheme.surface
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 24.dp)
-                .padding(bottom = 32.dp)
+                .padding(bottom = 36.dp)
         ) {
             Text(
-                "新建打卡项目",
-                style = MaterialTheme.typography.headlineSmall,
+                "新建打卡",
+                fontSize = 22.sp,
                 fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurface,
                 modifier = Modifier.padding(bottom = 20.dp)
             )
 
             OutlinedTextField(
                 value = name,
                 onValueChange = { name = it },
-                label = { Text("项目名称") },
+                placeholder = { Text("项目名称", color = MaterialTheme.colorScheme.outline) },
                 modifier = Modifier.fillMaxWidth(),
-                singleLine = true
+                singleLine = true,
+                shape = RoundedCornerShape(12.dp),
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = MaterialTheme.colorScheme.primary,
+                    unfocusedBorderColor = MaterialTheme.colorScheme.outline
+                )
             )
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            Text("图标", style = MaterialTheme.typography.labelLarge, modifier = Modifier.padding(bottom = 8.dp))
+            Text("图标", fontSize = 14.sp, fontWeight = FontWeight.Medium, color = MaterialTheme.colorScheme.onSurface)
+            Spacer(modifier = Modifier.height(8.dp))
             FlowRow(
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
                 PresetIcons.forEach { icon ->
                     Box(
                         modifier = Modifier
                             .size(44.dp)
-                            .clip(RoundedCornerShape(8.dp))
+                            .clip(RoundedCornerShape(10.dp))
                             .background(
-                                if (selectedIcon == icon) Color(android.graphics.Color.parseColor(selectedColor))
+                                if (selectedIcon == icon) Color(AndroidColor.parseColor(selectedColor))
                                 else MaterialTheme.colorScheme.surfaceVariant
                             )
                             .then(
-                                if (selectedIcon == icon) Modifier.border(
-                                    2.dp,
-                                    MaterialTheme.colorScheme.primary,
-                                    RoundedCornerShape(8.dp)
-                                ) else Modifier
+                                if (selectedIcon == icon) Modifier.border(2.dp, MaterialTheme.colorScheme.primary, RoundedCornerShape(10.dp))
+                                else Modifier
                             )
                             .clickable { selectedIcon = icon },
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
                             icon.first().toString(),
-                            color = if (selectedIcon == icon) Color.White
-                                    else MaterialTheme.colorScheme.onSurfaceVariant,
+                            color = if (selectedIcon == icon) Color.White else MaterialTheme.colorScheme.onSurfaceVariant,
                             fontWeight = FontWeight.Bold
                         )
                     }
@@ -126,34 +134,27 @@ fun CreateProjectSheet(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            Text("颜色", style = MaterialTheme.typography.labelLarge, modifier = Modifier.padding(bottom = 8.dp))
+            Text("颜色", fontSize = 14.sp, fontWeight = FontWeight.Medium, color = MaterialTheme.colorScheme.onSurface)
+            Spacer(modifier = Modifier.height(8.dp))
             FlowRow(
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
                 PresetColors.forEach { color ->
                     Box(
                         modifier = Modifier
                             .size(36.dp)
                             .clip(CircleShape)
-                            .background(Color(android.graphics.Color.parseColor(color)))
+                            .background(Color(AndroidColor.parseColor(color)))
                             .then(
-                                if (selectedColor == color) Modifier.border(
-                                    3.dp,
-                                    MaterialTheme.colorScheme.onSurface,
-                                    CircleShape
-                                ) else Modifier
+                                if (selectedColor == color) Modifier.border(3.dp, MaterialTheme.colorScheme.onSurface, CircleShape)
+                                else Modifier
                             )
                             .clickable { selectedColor = color },
                         contentAlignment = Alignment.Center
                     ) {
                         if (selectedColor == color) {
-                            Icon(
-                                Icons.Filled.CheckCircle,
-                                contentDescription = null,
-                                tint = Color.White,
-                                modifier = Modifier.size(16.dp)
-                            )
+                            Icon(Icons.Filled.CheckCircle, contentDescription = null, tint = Color.White, modifier = Modifier.size(18.dp))
                         }
                     }
                 }
@@ -161,14 +162,15 @@ fun CreateProjectSheet(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            Text("提醒时间", style = MaterialTheme.typography.labelLarge, modifier = Modifier.padding(bottom = 8.dp))
+            Text("提醒时间", fontSize = 14.sp, fontWeight = FontWeight.Medium, color = MaterialTheme.colorScheme.onSurface)
+            Spacer(modifier = Modifier.height(8.dp))
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.Center,
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 TimeAdjuster(current = reminderHourStr, onAdjust = { h -> reminderHourStr = h }, range = 0..23)
-                Text(" : ", style = MaterialTheme.typography.headlineMedium)
+                Text(" : ", fontSize = 24.sp, color = MaterialTheme.colorScheme.onSurface)
                 TimeAdjuster(current = reminderMinuteStr, onAdjust = { m -> reminderMinuteStr = m }, range = 0..59)
             }
 
@@ -178,70 +180,55 @@ fun CreateProjectSheet(
                 onClick = {
                     if (name.isNotBlank()) {
                         val time = "${reminderHourStr.padStart(2, '0')}:${reminderMinuteStr.padStart(2, '0')}"
-                        viewModel.create(
-                            CheckInProject(
-                                name = name,
-                                icon = selectedIcon,
-                                color = selectedColor,
-                                reminderTime = time,
-                                reminderEnabled = time.isNotEmpty()
-                            )
-                        )
-                        scope.launch {
-                            sheetState.hide()
-                            onDismiss()
-                        }
+                        viewModel.create(CheckInProject(
+                            name = name, icon = selectedIcon, color = selectedColor,
+                            reminderTime = time, reminderEnabled = time.isNotEmpty()
+                        ))
+                        scope.launch { sheetState.hide(); onDismiss() }
                     }
                 },
                 modifier = Modifier.fillMaxWidth(),
-                enabled = name.isNotBlank()
+                enabled = name.isNotBlank(),
+                shape = RoundedCornerShape(14.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
             ) {
-                Text("创建")
+                Text("创建", fontWeight = FontWeight.Bold)
             }
         }
     }
 }
 
 @Composable
-private fun TimeAdjuster(
-    current: String,
-    onAdjust: (String) -> Unit,
-    range: IntRange
-) {
+private fun TimeAdjuster(current: String, onAdjust: (String) -> Unit, range: IntRange) {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        TextButton(
-            onClick = {
-                val v = (current.toIntOrNull() ?: 0) + 1
-                val adjusted = if (v > range.last) range.first else v
-                onAdjust(adjusted.toString().padStart(2, '0'))
-            }
-        ) {
-            Text("+", style = MaterialTheme.typography.titleMedium)
-        }
+        TextButton(onClick = {
+            val v = (current.toIntOrNull() ?: 0) + 1
+            val adjusted = if (v > range.last) range.first else v
+            onAdjust(adjusted.toString().padStart(2, '0'))
+        }) { Text("+", fontSize = 16.sp) }
         OutlinedTextField(
             value = current,
             onValueChange = { input ->
                 val filtered = input.filter { it.isDigit() }.take(2)
-                if (filtered.isEmpty()) {
-                    onAdjust("00")
-                } else {
-                    val v = filtered.toIntOrNull() ?: 0
-                    val clamped = v.coerceIn(range.first, range.last)
-                    onAdjust(clamped.toString().padStart(2, '0'))
+                if (filtered.isEmpty()) onAdjust("00")
+                else {
+                    val v = (filtered.toIntOrNull() ?: 0).coerceIn(range.first, range.last)
+                    onAdjust(v.toString().padStart(2, '0'))
                 }
             },
             modifier = Modifier.width(64.dp),
             textStyle = MaterialTheme.typography.headlineSmall.copy(textAlign = TextAlign.Center),
-            singleLine = true
+            singleLine = true,
+            shape = RoundedCornerShape(10.dp),
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedBorderColor = MaterialTheme.colorScheme.primary,
+                unfocusedBorderColor = MaterialTheme.colorScheme.outline
+            )
         )
-        TextButton(
-            onClick = {
-                val v = (current.toIntOrNull() ?: 0) - 1
-                val adjusted = if (v < range.first) range.last else v
-                onAdjust(adjusted.toString().padStart(2, '0'))
-            }
-        ) {
-            Text("−", style = MaterialTheme.typography.titleMedium)
-        }
+        TextButton(onClick = {
+            val v = (current.toIntOrNull() ?: 0) - 1
+            val adjusted = if (v < range.first) range.last else v
+            onAdjust(adjusted.toString().padStart(2, '0'))
+        }) { Text("−", fontSize = 16.sp) }
     }
 }

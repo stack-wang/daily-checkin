@@ -2,27 +2,38 @@ package com.example.checkin.ui.theme
 
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.lightColorScheme
+import androidx.compose.material3.Typography
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.sp
 
-private val LightColorScheme = lightColorScheme(
-    primary = Blue500,
-    onPrimary = androidx.compose.ui.graphics.Color.White,
-    primaryContainer = Blue50,
-    secondary = Orange500,
-    tertiary = Green500,
-    background = androidx.compose.ui.graphics.Color.White,
-    surface = androidx.compose.ui.graphics.Color.White,
-    surfaceVariant = Grey100,
-    onBackground = androidx.compose.ui.graphics.Color(0xFF1C1B1F),
-    onSurface = androidx.compose.ui.graphics.Color(0xFF1C1B1F),
-    outline = Grey200,
-    outlineVariant = Grey100
+private val WarmColorScheme = lightColorScheme(
+    primary = Primary,
+    onPrimary = Color.White,
+    primaryContainer = PrimaryContainer,
+    onPrimaryContainer = PrimaryDark,
+    secondary = Secondary,
+    onSecondary = Color.White,
+    secondaryContainer = PrimaryContainer,
+    tertiary = Tertiary,
+    onTertiary = Color.White,
+    background = Background,
+    onBackground = OnBackground,
+    surface = Surface,
+    onSurface = OnSurface,
+    surfaceVariant = SurfaceVariant,
+    onSurfaceVariant = OnSurfaceVariant,
+    outline = Outline,
+    outlineVariant = CardBorder
 )
 
 @Composable
 fun CheckInTheme(content: @Composable () -> Unit) {
     MaterialTheme(
-        colorScheme = LightColorScheme,
+        colorScheme = WarmColorScheme,
         content = content
     )
 }
