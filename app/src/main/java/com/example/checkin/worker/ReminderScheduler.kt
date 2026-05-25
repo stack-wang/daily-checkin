@@ -57,12 +57,9 @@ object ReminderScheduler {
 
         try {
             if (canExact) {
-                alarmManager.setExactAndAllowWhileIdle(
-                    AlarmManager.RTC_WAKEUP,
-                    calendar.timeInMillis,
-                    pendingIntent
-                )
-                Log.i(TAG, "[Alarm] ✓ setExactAndAllowWhileIdle '${project.name}'(id=${project.id}) at $fireTime")
+                val alarmClockInfo = AlarmManager.AlarmClockInfo(calendar.timeInMillis, pendingIntent)
+                alarmManager.setAlarmClock(alarmClockInfo, pendingIntent)
+                Log.i(TAG, "[Alarm] ✓ setAlarmClock '${project.name}'(id=${project.id}) at $fireTime")
             } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                 alarmManager.setExact(AlarmManager.RTC_WAKEUP, calendar.timeInMillis, pendingIntent)
                 Log.i(TAG, "[Alarm] ✓ setExact '${project.name}'(id=${project.id}) at $fireTime")
