@@ -196,10 +196,6 @@ fun CreateProjectSheet(
                         rewardEnabled = it
                         if (it) makeUpEnabled = false
                     },
-                    colors = SwitchDefaults.colors(
-                        checkedThumbColor = MaterialTheme.colorScheme.primary,
-                        checkedTrackColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.4f)
-                    )
                 )
             }
 
@@ -223,11 +219,7 @@ fun CreateProjectSheet(
                 Switch(
                     checked = makeUpEnabled,
                     onCheckedChange = { if (!rewardEnabled) makeUpEnabled = it },
-                    enabled = !rewardEnabled,
-                    colors = SwitchDefaults.colors(
-                        checkedThumbColor = MaterialTheme.colorScheme.primary,
-                        checkedTrackColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.4f)
-                    )
+                    enabled = !rewardEnabled
                 )
             }
 
