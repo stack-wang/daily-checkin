@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -106,7 +107,7 @@ fun CalendarGrid(
 }
 
 @Composable
-private fun CalendarCell(
+private fun RowScope.CalendarCell(
     date: LocalDate,
     checked: Boolean,
     isToday: Boolean
