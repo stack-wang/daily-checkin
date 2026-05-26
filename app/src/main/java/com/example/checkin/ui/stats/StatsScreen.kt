@@ -34,6 +34,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.example.checkin.ui.components.CalendarGrid
 import com.example.checkin.ui.components.HeatmapChart
 import com.example.checkin.ui.theme.CheckGreen
 import com.example.checkin.ui.theme.StreakGold
@@ -49,6 +50,8 @@ fun StatsScreen(
             CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
         }
     } else {
+        val hasRewardProjects = uiState.projectRewardEnabled.any { it.value }
+
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
@@ -62,23 +65,21 @@ fun StatsScreen(
                 Spacer(modifier = Modifier.height(4.dp))
             }
 
-            item {
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(16.dp),
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
-                ) {
-                    Column(modifier = Modifier.padding(16.dp)) {
-                        Text("打卡热力图", fontSize = 16.sp, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurface)
-                        Spacer(modifier = Modifier.height(8.dp))
-                        HeatmapChart(dailyCounts = uiState.dailyCounts, modifier = Modifier.fillMaxWidth())
+            if (!hasRewardProjects) {
+                item {
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(16.dp),
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+                    ) {
+                        Column(modifier = Modifier.padding(16.dp)) {
+                            Text("打卡热力图", fontSize = 16.sp, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurface)
+                            Spacer(modifier = Modifier.height(8.dp))
+                            HeatmapChart(dailyCounts = uiState.dailyCounts, modifier = Modifier.fillMaxWidth())
+                        }
                     }
                 }
-            }
-
-            item {
-                Text("项目详情", fontSize = 16.sp, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurface, modifier = Modifier.padding(top = 4.dp))
             }
 
             items(uiState.stats, key = { it.projectId }) { stat ->
@@ -92,6 +93,31 @@ fun StatsScreen(
                     currentStreak = stat.currentStreak, longestStreak = stat.longestStreak,
                     totalReward = if (isReward) stat.totalReward else 0
                 )
+
+                if (isReward) {
+                    val checkedDates = uiState.projectCheckedDates[stat.projectId] ?: emptySet()
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(14.dp),
+                        colors = CardDefaults.cardColors(containerColor = color.copy(alpha = 0.05f)),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+                    ) {
+                        Column(modifier = Modifier.padding(12.dp)) {
+                            Text(
+                                "${name} · 打卡日历",
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.Medium,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                            Spacer(modifier = Modifier.height(6.dp))
+                            CalendarGrid(
+                                checkedDates = checkedDates,
+                                modifier = Modifier.fillMaxWidth(),
+                                months = 1
+                            )
+                        }
+                    }
+                }
             }
 
             item { Spacer(modifier = Modifier.height(100.dp)) }

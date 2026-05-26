@@ -98,6 +98,9 @@ class CheckInRepository @Inject constructor(
     suspend fun getDailyCountInRange(startDate: String, endDate: String): List<RecordDao.DailyCount> =
         recordDao.getDailyCountInRange(startDate, endDate)
 
+    suspend fun getCheckedDates(projectId: Long, startDate: String, endDate: String): List<String> =
+        recordDao.getCheckedDates(projectId, startDate, endDate)
+
     suspend fun getMissedCheckIns(project: CheckInProject): List<String> {
         if (!project.makeUpEnabled) return emptyList()
 

@@ -49,6 +49,9 @@ interface RecordDao {
     @Query("DELETE FROM checkin_records WHERE project_id = :projectId")
     suspend fun deleteByProject(projectId: Long)
 
+    @Query("SELECT date FROM checkin_records WHERE project_id = :projectId AND status = 'NORMAL' AND date BETWEEN :start AND :end ORDER BY date ASC")
+    suspend fun getCheckedDates(projectId: Long, start: String, end: String): List<String>
+
     data class DailyCount(
         val date: String,
         val count: Int

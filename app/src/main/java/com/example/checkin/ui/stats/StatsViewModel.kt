@@ -18,6 +18,7 @@ data class StatsUiState(
     val projectNames: Map<Long, String> = emptyMap(),
     val projectColors: Map<Long, String> = emptyMap(),
     val projectRewardEnabled: Map<Long, Boolean> = emptyMap(),
+    val projectCheckedDates: Map<Long, Set<String>> = emptyMap(),
     val dailyCounts: Map<String, Int> = emptyMap(),
     val isLoading: Boolean = true
 )
@@ -55,11 +56,20 @@ class StatsViewModel @Inject constructor(
         )
         val dailyCounts = dailyData.associate { it.date to it.count }
 
+        val projectCheckedDates = mutableMapOf<Long, Set<String>>()
+        for (project in projects) {
+            if (project.rewardEnabled) {
+                val dates = repository.getCheckedDates(project.id, startDate.format(formatter), today.format(formatter))
+                projectCheckedDates[project.id] = dates.toSet()
+            }
+        }
+
         _uiState.value = StatsUiState(
             stats = stats,
             projectNames = projectNames,
             projectColors = projectColors,
             projectRewardEnabled = projectRewardEnabled,
+            projectCheckedDates = projectCheckedDates,
             dailyCounts = dailyCounts,
             isLoading = false
         )
