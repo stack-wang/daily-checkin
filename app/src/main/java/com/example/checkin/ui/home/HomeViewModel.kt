@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.checkin.data.db.entity.CheckInProject
 import com.example.checkin.data.db.entity.CheckInRecord
+import com.example.checkin.data.db.entity.CheckInStats
 import com.example.checkin.data.repository.CheckInRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -17,6 +18,7 @@ data class HomeUiState(
     val todayRecords: List<CheckInRecord> = emptyList(),
     val missedItems: Map<Long, List<String>> = emptyMap(),
     val makeUpDays: Int = 7,
+    val projectStats: Map<Long, CheckInStats> = emptyMap(),
     val isLoading: Boolean = true
 )
 
@@ -46,9 +48,12 @@ class HomeViewModel @Inject constructor(
         val today = repository.today()
         val records = repository.getRecordsByDate(today)
         val makeUpDays = repository.makeUpDaysFlow.value
+        val statsList = repository.getAllStats()
+        val projectStats = statsList.associateBy { it.projectId }
 
         val missedItems = mutableMapOf<Long, List<String>>()
         for (project in projects) {
+            if (!project.makeUpEnabled) continue
             val missed = repository.getMissedCheckIns(project)
             if (missed.isNotEmpty()) {
                 missedItems[project.id] = missed
@@ -60,6 +65,7 @@ class HomeViewModel @Inject constructor(
             todayRecords = records,
             missedItems = missedItems,
             makeUpDays = makeUpDays,
+            projectStats = projectStats,
             isLoading = false
         )
     }

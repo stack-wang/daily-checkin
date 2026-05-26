@@ -20,5 +20,7 @@ data class CheckInStats(
     @ColumnInfo(name = "last_checkin_date")
     val lastCheckInDate: String? = null,
     @ColumnInfo(name = "updated_at")
-    val updatedAt: Long = System.currentTimeMillis()
+    val updatedAt: Long = System.currentTimeMillis(),
+    @ColumnInfo(name = "total_reward")
+    val totalReward: Int = 0
 )

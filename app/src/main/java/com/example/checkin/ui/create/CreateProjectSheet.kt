@@ -30,6 +30,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
@@ -67,6 +68,8 @@ fun CreateProjectSheet(
     var selectedColor by remember { mutableStateOf(PresetColors[0]) }
     var reminderHourStr by remember { mutableStateOf("08") }
     var reminderMinuteStr by remember { mutableStateOf("00") }
+    var rewardEnabled by remember { mutableStateOf(false) }
+    var makeUpEnabled by remember { mutableStateOf(true) }
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
@@ -177,6 +180,57 @@ fun CreateProjectSheet(
                 TimeAdjuster(current = reminderMinuteStr, onAdjust = { m -> reminderMinuteStr = m }, range = 0..59)
             }
 
+            Spacer(modifier = Modifier.height(20.dp))
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text("奖励模式", fontSize = 14.sp, fontWeight = FontWeight.Medium, color = MaterialTheme.colorScheme.onSurface)
+                    Text("每天 ¥1～7，中断从 ¥1 开始", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+                Switch(
+                    checked = rewardEnabled,
+                    onCheckedChange = {
+                        rewardEnabled = it
+                        if (it) makeUpEnabled = false
+                    },
+                    colors = SwitchDefaults.colors(
+                        checkedThumbColor = MaterialTheme.colorScheme.primary,
+                        checkedTrackColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.4f)
+                    )
+                )
+            }
+
+            if (rewardEnabled) {
+                Text(
+                    "开启奖励后不可补卡",
+                    fontSize = 12.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(top = 4.dp)
+                )
+            }
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text("允许补卡", fontSize = 14.sp, fontWeight = FontWeight.Medium, color = if (rewardEnabled) MaterialTheme.colorScheme.outline else MaterialTheme.colorScheme.onSurface)
+                Spacer(modifier = Modifier.weight(1f))
+                Switch(
+                    checked = makeUpEnabled,
+                    onCheckedChange = { if (!rewardEnabled) makeUpEnabled = it },
+                    enabled = !rewardEnabled,
+                    colors = SwitchDefaults.colors(
+                        checkedThumbColor = MaterialTheme.colorScheme.primary,
+                        checkedTrackColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.4f)
+                    )
+                )
+            }
+
             Spacer(modifier = Modifier.height(24.dp))
 
             Button(
@@ -185,7 +239,8 @@ fun CreateProjectSheet(
                         val time = "${reminderHourStr.padStart(2, '0')}:${reminderMinuteStr.padStart(2, '0')}"
                         viewModel.create(CheckInProject(
                             name = name, icon = selectedIcon, color = selectedColor,
-                            reminderTime = time, reminderEnabled = time.isNotEmpty()
+                            reminderTime = time, reminderEnabled = time.isNotEmpty(),
+                            rewardEnabled = rewardEnabled, makeUpEnabled = makeUpEnabled
                         ))
                         scope.launch { sheetState.hide(); onDismiss() }
                     }

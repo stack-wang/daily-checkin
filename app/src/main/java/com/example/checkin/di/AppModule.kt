@@ -24,7 +24,8 @@ object AppModule {
             context,
             AppDatabase::class.java,
             "checkin_database"
-        ).build()
+        ).addMigrations(AppDatabase.MIGRATION_1_2)
+         .build()
     }
 
     @Provides

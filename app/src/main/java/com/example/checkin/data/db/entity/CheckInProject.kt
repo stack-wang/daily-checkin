@@ -18,5 +18,9 @@ data class CheckInProject(
     @ColumnInfo(name = "sort_order")
     val sortOrder: Int = 0,
     @ColumnInfo(name = "created_at")
-    val createdAt: Long = System.currentTimeMillis()
+    val createdAt: Long = System.currentTimeMillis(),
+    @ColumnInfo(name = "reward_enabled")
+    val rewardEnabled: Boolean = false,
+    @ColumnInfo(name = "makeup_enabled")
+    val makeUpEnabled: Boolean = true
 )

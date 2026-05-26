@@ -48,6 +48,7 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.checkin.data.db.entity.CheckInProject
+import com.example.checkin.data.db.entity.CheckInStats
 import com.example.checkin.ui.theme.CheckGreen
 import com.example.checkin.ui.theme.StreakGold
 import java.time.LocalDate
@@ -98,9 +99,11 @@ fun HomeScreen(
 
             items(uiState.projects, key = { it.id }) { project ->
                 val isChecked = uiState.todayRecords.any { it.projectId == project.id }
+                val stats = uiState.projectStats[project.id]
                 HabitCard(
                     project = project,
                     isChecked = isChecked,
+                    stats = stats,
                     onCheck = { viewModel.checkIn(project.id) },
                     onUncheck = { viewModel.uncheckIn(project.id) }
                 )
@@ -147,6 +150,7 @@ fun HomeScreen(
 fun HabitCard(
     project: CheckInProject,
     isChecked: Boolean,
+    stats: CheckInStats?,
     onCheck: () -> Unit,
     onUncheck: () -> Unit
 ) {
@@ -155,6 +159,9 @@ fun HabitCard(
         if (isChecked) projectColor.copy(alpha = 0.06f) else MaterialTheme.colorScheme.surface,
         label = "cardBg"
     )
+    val streak = stats?.currentStreak ?: 0
+    val todayReward = ((streak.takeIf { isChecked } ?: (streak + 1)) - 1) % 7 + 1
+    val totalReward = stats?.totalReward ?: 0
 
     Card(
         modifier = Modifier
@@ -162,72 +169,83 @@ fun HabitCard(
             .clickable { if (isChecked) onUncheck() else onCheck() },
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = cardBg),
-        elevation = CardDefaults.cardElevation(defaultElevation = if (isChecked) 0.dp else 1.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = if (isChecked || project.rewardEnabled) 0.dp else 1.dp)
     ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 14.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    project.name,
-                    fontSize = 17.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    color = if (isChecked) projectColor else MaterialTheme.colorScheme.onSurface
-                )
-                if (project.reminderTime.isNotEmpty()) {
+        Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        "每天 ${project.reminderTime}",
-                        fontSize = 13.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(top = 2.dp)
+                        project.name,
+                        fontSize = 17.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = if (isChecked) projectColor else MaterialTheme.colorScheme.onSurface
                     )
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        if (streak > 0) {
+                            Icon(Icons.Filled.LocalFireDepartment, null, tint = StreakGold, modifier = Modifier.size(14.dp))
+                            Spacer(modifier = Modifier.width(2.dp))
+                            Text("$streak 天", fontSize = 12.sp, color = StreakGold)
+                            Spacer(modifier = Modifier.width(8.dp))
+                        }
+                        if (project.reminderTime.isNotEmpty()) {
+                            Text(project.reminderTime, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                    }
+                }
+
+                if (isChecked) {
+                    Box(
+                        modifier = Modifier.size(44.dp).clip(CircleShape).background(CheckGreen),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(Icons.Filled.Check, "已打卡", tint = Color.White, modifier = Modifier.size(24.dp))
+                    }
+                } else {
+                    Box(
+                        modifier = Modifier.size(44.dp).clip(CircleShape).border(2.dp, MaterialTheme.colorScheme.outline, CircleShape),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text("打卡", fontSize = 11.sp, color = MaterialTheme.colorScheme.outline)
+                    }
                 }
             }
 
-            if (isChecked) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(
-                        Icons.Filled.LocalFireDepartment,
-                        contentDescription = null,
-                        tint = StreakGold,
-                        modifier = Modifier.size(16.dp)
-                    )
-                    Spacer(modifier = Modifier.width(2.dp))
+            if (project.rewardEnabled) {
+                Spacer(modifier = Modifier.height(8.dp))
+                val totalDays = if (isChecked) streak else streak + 1
+                Row(
+                    modifier = Modifier.fillMaxWidth().background(
+                        projectColor.copy(alpha = 0.08f), RoundedCornerShape(8.dp)
+                    ).padding(horizontal = 10.dp, vertical = 6.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
                     Text(
-                        "1",
-                        fontSize = 12.sp,
-                        color = StreakGold,
-                        fontWeight = FontWeight.Bold
+                        if (isChecked) "今日已赚" else "今天打卡可赚",
+                        fontSize = 13.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
+                    Spacer(modifier = Modifier.weight(1f))
+                    Text("¥$todayReward", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = projectColor)
                     Spacer(modifier = Modifier.width(12.dp))
+                    Row {
+                        repeat(7) { i ->
+                            Text(
+                                if (i < todayReward) "●" else "○",
+                                fontSize = 10.sp,
+                                color = if (i < todayReward) projectColor else MaterialTheme.colorScheme.outline
+                            )
+                        }
+                    }
                 }
-                Box(
-                    modifier = Modifier
-                        .size(44.dp)
-                        .clip(CircleShape)
-                        .background(CheckGreen),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        Icons.Filled.Check,
-                        contentDescription = "已打卡",
-                        tint = Color.White,
-                        modifier = Modifier.size(24.dp)
-                    )
-                }
-            } else {
-                Box(
-                    modifier = Modifier
-                        .size(44.dp)
-                        .clip(CircleShape)
-                        .border(2.dp, MaterialTheme.colorScheme.outline, CircleShape),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text("打卡", fontSize = 11.sp, color = MaterialTheme.colorScheme.outline)
-                }
+                Text(
+                    "累计 ¥$totalReward",
+                    fontSize = 12.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(top = 4.dp)
+                )
             }
         }
     }

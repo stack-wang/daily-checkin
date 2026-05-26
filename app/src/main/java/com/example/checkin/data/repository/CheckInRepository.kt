@@ -99,6 +99,8 @@ class CheckInRepository @Inject constructor(
         recordDao.getDailyCountInRange(startDate, endDate)
 
     suspend fun getMissedCheckIns(project: CheckInProject): List<String> {
+        if (!project.makeUpEnabled) return emptyList()
+
         val today = LocalDate.parse(today(), dateFormatter)
         val ndaysAgo = today.minusDays(makeUpDaysFlow.value.toLong())
         val projectCreateDate = Instant.ofEpochMilli(project.createdAt)
@@ -178,9 +180,31 @@ class CheckInRepository @Inject constructor(
             currentStreak = currentStreak,
             longestStreak = maxOf(currentStreak, longestStreak),
             lastCheckInDate = lastCheckInDate,
-            updatedAt = System.currentTimeMillis()
+            updatedAt = System.currentTimeMillis(),
+            totalReward = calculateTotalReward(allRecords)
         )
         statsDao.upsert(stats)
+    }
+
+    private fun calculateTotalReward(records: List<CheckInRecord>): Int {
+        val normalDates = records
+            .filter { it.status == CheckInRecord.STATUS_NORMAL }
+            .map { LocalDate.parse(it.date, dateFormatter) }
+            .sorted()
+        if (normalDates.isEmpty()) return 0
+
+        var streak = 1
+        var totalReward = ((streak - 1) % 7) + 1
+        for (i in 1 until normalDates.size) {
+            val diff = normalDates[i - 1].until(normalDates[i], ChronoUnit.DAYS).toInt()
+            if (diff == 1) {
+                streak++
+            } else {
+                streak = 1
+            }
+            totalReward += ((streak - 1) % 7) + 1
+        }
+        return totalReward
     }
 
     fun today(): String = LocalDate.now().format(dateFormatter)

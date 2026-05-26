@@ -88,7 +88,8 @@ fun StatsScreen(
                 StatCard(
                     name = name, color = color,
                     totalCount = stat.totalCount, makeupCount = stat.makeupCount,
-                    currentStreak = stat.currentStreak, longestStreak = stat.longestStreak
+                    currentStreak = stat.currentStreak, longestStreak = stat.longestStreak,
+                    totalReward = stat.totalReward
                 )
             }
 
@@ -100,7 +101,7 @@ fun StatsScreen(
 @Composable
 fun StatCard(
     name: String, color: Color, totalCount: Int, makeupCount: Int,
-    currentStreak: Int, longestStreak: Int
+    currentStreak: Int, longestStreak: Int, totalReward: Int
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -121,6 +122,10 @@ fun StatCard(
                 StatItem("总打卡", "$totalCount")
                 StatItem("补卡", "$makeupCount")
                 StatItem("最长", "$longestStreak 天")
+            }
+            if (totalReward > 0) {
+                Spacer(modifier = Modifier.height(8.dp))
+                Text("💰 累计赚 ¥$totalReward 元", fontSize = 14.sp, fontWeight = FontWeight.Medium, color = color)
             }
         }
     }
