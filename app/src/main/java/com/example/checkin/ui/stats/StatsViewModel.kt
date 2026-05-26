@@ -17,6 +17,7 @@ data class StatsUiState(
     val stats: List<CheckInStats> = emptyList(),
     val projectNames: Map<Long, String> = emptyMap(),
     val projectColors: Map<Long, String> = emptyMap(),
+    val projectRewardEnabled: Map<Long, Boolean> = emptyMap(),
     val dailyCounts: Map<String, Int> = emptyMap(),
     val isLoading: Boolean = true
 )
@@ -43,6 +44,7 @@ class StatsViewModel @Inject constructor(
         val projects = repository.getAllProjects()
         val projectNames = projects.associate { it.id to it.name }
         val projectColors = projects.associate { it.id to it.color }
+        val projectRewardEnabled = projects.associate { it.id to it.rewardEnabled }
 
         val today = LocalDate.now()
         val startDate = today.minusMonths(3).withDayOfMonth(1)
@@ -57,6 +59,7 @@ class StatsViewModel @Inject constructor(
             stats = stats,
             projectNames = projectNames,
             projectColors = projectColors,
+            projectRewardEnabled = projectRewardEnabled,
             dailyCounts = dailyCounts,
             isLoading = false
         )

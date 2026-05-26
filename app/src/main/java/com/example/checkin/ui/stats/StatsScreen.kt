@@ -85,11 +85,12 @@ fun StatsScreen(
                 val name = uiState.projectNames[stat.projectId] ?: "未知"
                 val colorStr = uiState.projectColors[stat.projectId] ?: "#FF7B54"
                 val color = Color(AndroidColor.parseColor(colorStr))
+                val isReward = uiState.projectRewardEnabled[stat.projectId] ?: false
                 StatCard(
                     name = name, color = color,
                     totalCount = stat.totalCount, makeupCount = stat.makeupCount,
                     currentStreak = stat.currentStreak, longestStreak = stat.longestStreak,
-                    totalReward = stat.totalReward
+                    totalReward = if (isReward) stat.totalReward else 0
                 )
             }
 
